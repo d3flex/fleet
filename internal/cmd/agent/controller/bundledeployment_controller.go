@@ -13,6 +13,7 @@ import (
 	"github.com/rancher/fleet/internal/cmd/agent/deployer/driftdetect"
 	"github.com/rancher/fleet/internal/cmd/agent/deployer/monitor"
 	"github.com/rancher/fleet/internal/namespaces"
+	fleetreports "github.com/rancher/fleet/internal/openreports"
 	fleetv1 "github.com/rancher/fleet/pkg/apis/fleet.cattle.io/v1alpha1"
 	"github.com/rancher/fleet/pkg/durations"
 	"github.com/rancher/fleet/pkg/helmvalues"
@@ -349,6 +350,11 @@ func (r *BundleDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		merr = append(merr, fmt.Errorf("bundledeployment has been deleted: %w", err))
 	} else if err != nil {
 		merr = append(merr, fmt.Errorf("failed final update to bundledeployment status: %w", err))
+	}
+	// Publish convergence state as an OpenReports Report. Best-effort: a report
+	// failure must not fail the reconcile, since the deployment itself succeeded.
+	if err := fleetreports.CreateOrPatchReport(ctx, r.LocalClient, fleetreports.BuildReport(bd)); err != nil {
+		logger.V(1).Info("Failed to write convergence report", "error", err)
 	}
 
 	return ctrl.Result{}, errutil.NewAggregate(merr)

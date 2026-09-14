@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	openreports "github.com/openreports/reports-api/apis/openreports.io/v1alpha1"
 	"github.com/rancher/fleet/internal/cmd/agent/controller"
 	"github.com/rancher/fleet/internal/cmd/agent/deployer"
 	"github.com/rancher/fleet/internal/cmd/agent/deployer/cleanup"
@@ -52,6 +53,9 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 
 	utilruntime.Must(clientgoscheme.AddToScheme(localScheme))
+	// Required so the client can serialise Reports; without it, writing one
+	// panics with "no kind is registered for the type" at runtime.
+	utilruntime.Must(openreports.Install(localScheme))
 }
 
 // start the fleet agent
